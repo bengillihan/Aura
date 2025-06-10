@@ -1,0 +1,35 @@
+# Git Commands to Push Aura Changes to Replit Branch
+
+# First, check current status and add all changes
+git status
+git add .
+
+# Commit all the new files and changes
+git commit -m "Complete Aura Server Administration Dashboard
+
+- Added comprehensive README.md with technical documentation
+- Created detailed DEPLOYMENT_GUIDE.md for bengillihan.com setup
+- Added PROJECT_OVERVIEW.md explaining features and architecture
+- Updated aura_requirements.txt with all dependencies
+- Enhanced subdomain routing for service management
+- Fixed Google OAuth authentication flow
+- Complete Flask application with all core features:
+  * Google OAuth authentication (Bdgillihan@gmail.com authorized)
+  * Systemd service management (start/stop/restart/monitor)
+  * GitHub deployment pipeline with real-time logs
+  * Resource monitoring with interactive charts
+  * Integrated web terminal with WebSocket communication
+  * PostgreSQL database integration
+  * Cloudflare Tunnel ready configuration"
+
+# Create and switch to replit branch (if it doesn't exist)
+git checkout -b replit
+
+# Or switch to existing replit branch
+# git checkout replit
+
+# Push to GitHub replit branch
+git push origin replit
+
+# If this is the first push to the branch, use:
+# git push -u origin replit
