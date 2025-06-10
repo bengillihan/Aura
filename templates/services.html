@@ -21,6 +21,12 @@
                 <p class="card-text text-muted">{{ service_config.description }}</p>
                 <p class="small"><strong>Service:</strong> <code>{{ service_name }}</code></p>
                 <p class="small"><strong>Path:</strong> <code>{{ service_config.path }}</code></p>
+                {% if service_config.subdomain %}
+                <p class="small"><strong>Subdomain:</strong> <span class="text-info">{{ service_config.subdomain }}</span></p>
+                {% endif %}
+                {% if service_config.port %}
+                <p class="small"><strong>Port:</strong> <code>{{ service_config.port }}</code></p>
+                {% endif %}
                 
                 <!-- Service Control Buttons -->
                 <div class="btn-group w-100 mb-3" role="group">

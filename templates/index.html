@@ -86,6 +86,9 @@
                                         <h6 class="card-title">{{ service_config.name }}</h6>
                                         <p class="card-text text-muted small">{{ service_config.description }}</p>
                                         <code class="small">{{ service_name }}</code>
+                                        {% if service_config.subdomain %}
+                                        <br><small class="text-info">{{ service_config.subdomain }}</small>
+                                        {% endif %}
                                     </div>
                                     <span class="badge bg-secondary" id="status-{{ service_name }}">
                                         <i class="fas fa-spinner fa-spin me-1"></i>Loading...

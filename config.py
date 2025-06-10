@@ -4,23 +4,36 @@ import os
 ALLOWED_EMAIL = os.environ.get("ALLOWED_EMAIL", "Bdgillihan@gmail.com")
 
 # Configuration for managed services
-# Each service should have a name and path to its directory
+# Each service should have a name, path, and subdomain information
 MANAGED_SERVICES = {
     "podcastpal.service": {
         "name": "PodcastPal",
         "path": "/home/ubuntu/podcastpal",
-        "description": "Podcast management service"
+        "description": "Podcast management service",
+        "subdomain": "podcastpal.bengillihan.com",
+        "port": 3000
     },
-    "webserver.service": {
-        "name": "Web Server", 
-        "path": "/home/ubuntu/webserver",
-        "description": "Main web server application"
+    "timeblocker.service": {
+        "name": "TimeBlocker", 
+        "path": "/home/ubuntu/timeblocker",
+        "description": "Time management application",
+        "subdomain": "timeblocker.bengillihan.com",
+        "port": 3001
+    },
+    "aura.service": {
+        "name": "Aura Dashboard",
+        "path": "/home/ubuntu/aura",
+        "description": "Server administration dashboard",
+        "subdomain": "aura.bengillihan.com",
+        "port": 5000
     },
     # Add more services as needed
     # "myapp.service": {
     #     "name": "My Application",
     #     "path": "/path/to/myapp",
-    #     "description": "Description of my application"
+    #     "description": "Description of my application",
+    #     "subdomain": "myapp.bengillihan.com",
+    #     "port": 3002
     # }
 }
 

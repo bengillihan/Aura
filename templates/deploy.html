@@ -23,6 +23,9 @@
                 <p class="card-text text-muted">{{ service_config.description }}</p>
                 <p class="small"><strong>Service:</strong> <code>{{ service_name }}</code></p>
                 <p class="small"><strong>Path:</strong> <code>{{ service_config.path }}</code></p>
+                {% if service_config.subdomain %}
+                <p class="small"><strong>URL:</strong> <a href="https://{{ service_config.subdomain }}" target="_blank" class="text-info">{{ service_config.subdomain }}</a></p>
+                {% endif %}
                 
                 <button type="button" class="btn btn-primary w-100" 
                         onclick="deployService('{{ service_name }}')">
