@@ -1,0 +1,258 @@
+/* Custom CSS for Aura Dashboard */
+
+/* Terminal styling */
+.xterm {
+    padding: 10px;
+}
+
+.xterm .xterm-viewport {
+    background-color: #000000 !important;
+}
+
+.xterm .xterm-screen {
+    background-color: #000000 !important;
+}
+
+/* Card enhancements */
+.card {
+    border: 1px solid var(--bs-border-color);
+    transition: box-shadow 0.15s ease-in-out;
+}
+
+.card:hover {
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.3);
+}
+
+/* Status badges with pulsing animation */
+.badge.pulse {
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.7;
+    }
+    100% {
+        opacity: 1;
+    }
+}
+
+/* Loading spinners */
+.spinner-border-sm {
+    width: 1rem;
+    height: 1rem;
+}
+
+/* Service status indicators */
+.service-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+/* Terminal shortcuts */
+.terminal-shortcuts {
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+/* Monitoring charts */
+.chart-container {
+    position: relative;
+    height: 300px;
+}
+
+/* Code blocks */
+code {
+    color: var(--bs-info);
+    background-color: var(--bs-dark);
+    padding: 0.125rem 0.25rem;
+    border-radius: 0.25rem;
+}
+
+/* Alert enhancements */
+.alert {
+    border-left: 4px solid currentColor;
+}
+
+.alert-info {
+    border-left-color: var(--bs-info);
+}
+
+.alert-warning {
+    border-left-color: var(--bs-warning);
+}
+
+.alert-danger {
+    border-left-color: var(--bs-danger);
+}
+
+.alert-success {
+    border-left-color: var(--bs-success);
+}
+
+/* Deployment log styling */
+.deployment-log {
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    font-size: 0.875rem;
+    line-height: 1.4;
+    background-color: var(--bs-dark);
+    color: var(--bs-light);
+    border: 1px solid var(--bs-border-color);
+    border-radius: 0.375rem;
+    padding: 1rem;
+    max-height: 400px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+}
+
+/* Button group enhancements */
+.btn-group .btn {
+    border-color: var(--bs-border-color);
+}
+
+/* Table enhancements */
+.table-dark {
+    --bs-table-bg: var(--bs-dark);
+}
+
+.table-hover tbody tr:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+/* Toast container positioning */
+.toast-container {
+    z-index: 1055;
+}
+
+/* Navigation enhancements */
+.navbar-brand {
+    font-weight: 600;
+}
+
+.nav-link {
+    transition: color 0.15s ease-in-out;
+}
+
+.nav-link:hover {
+    color: var(--bs-primary) !important;
+}
+
+/* Card header enhancements */
+.card-header {
+    background-color: rgba(255, 255, 255, 0.03);
+    border-bottom: 1px solid var(--bs-border-color);
+}
+
+/* Progress bars */
+.progress {
+    height: 1rem;
+    background-color: var(--bs-dark);
+}
+
+/* Resource usage indicators */
+.resource-indicator {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.resource-indicator .progress {
+    flex: 1;
+    height: 0.5rem;
+}
+
+/* Service card styling */
+.service-card {
+    transition: transform 0.2s ease-in-out;
+}
+
+.service-card:hover {
+    transform: translateY(-2px);
+}
+
+/* Terminal connection status */
+.connection-status {
+    position: relative;
+}
+
+.connection-status.connected::before {
+    content: '';
+    position: absolute;
+    left: -8px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 6px;
+    height: 6px;
+    background-color: var(--bs-success);
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .card-body {
+        padding: 1rem 0.75rem;
+    }
+    
+    .btn-group {
+        flex-direction: column;
+    }
+    
+    .btn-group .btn {
+        border-radius: 0.375rem !important;
+        margin-bottom: 0.25rem;
+    }
+    
+    .terminal-shortcuts .btn {
+        margin-bottom: 0.5rem;
+    }
+}
+
+/* Scrollbar styling for webkit browsers */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--bs-dark);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--bs-secondary);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--bs-light);
+}
+
+/* Focus indicators */
+.btn:focus,
+.form-control:focus,
+.form-select:focus {
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+/* Error states */
+.is-invalid {
+    border-color: var(--bs-danger);
+}
+
+.invalid-feedback {
+    color: var(--bs-danger);
+}
+
+/* Loading states */
+.loading {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.loading * {
+    cursor: not-allowed !important;
+}

@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+
+{% block title %}Terminal - Aura{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm@5.3.0/css/xterm.css" />
+<script src="https://cdn.jsdelivr.net/npm/xterm@5.3.0/lib/xterm.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xterm-addon-fit@0.8.0/lib/xterm-addon-fit.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1><i class="fas fa-terminal me-2"></i>Web Terminal</h1>
+    <div class="btn-group">
+        <button class="btn btn-outline-secondary btn-sm" onclick="clearTerminal()">
+            <i class="fas fa-trash me-1"></i>Clear
+        </button>
+        <button class="btn btn-outline-secondary btn-sm" onclick="toggleShortcuts()">
+            <i class="fas fa-keyboard me-1"></i>Shortcuts
+        </button>
+    </div>
+</div>
+
+<!-- Terminal Shortcuts -->
+<div class="card mb-3" id="shortcuts-panel" style="display: none;">
+    <div class="card-header">
+        <h6 class="mb-0"><i class="fas fa-keyboard me-2"></i>Quick Commands</h6>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-3 mb-2">
+                <button class="btn btn-outline-primary btn-sm w-100" onclick="sendCommand('sudo systemctl list-units --type=service --state=active')">
+                    <i class="fas fa-list me-1"></i>List Services
+                </button>
+            </div>
+            <div class="col-md-3 mb-2">
+                <button class="btn btn-outline-info btn-sm w-100" onclick="sendCommand('htop')">
+                    <i class="fas fa-chart-line me-1"></i>System Monitor
+                </button>
+            </div>
+            <div class="col-md-3 mb-2">
+                <button class="btn btn-outline-warning btn-sm w-100" onclick="sendCommand('df -h')">
+                    <i class="fas fa-hdd me-1"></i>Disk Usage
+                </button>
+            </div>
+            <div class="col-md-3 mb-2">
+                <button class="btn btn-outline-success btn-sm w-100" onclick="sendCommand('sudo journalctl -f')">
+                    <i class="fas fa-file-alt me-1"></i>System Logs
+                </button>
+            </div>
+        </div>
+        <div class="row">
+            {% for service_name in services.keys() %}
+            <div class="col-md-3 mb-2">
+                <button class="btn btn-outline-secondary btn-sm w-100" 
+                        onclick="sendCommand('sudo journalctl -u {{ service_name }} -f')">
+                    <i class="fas fa-eye me-1"></i>{{ services[service_name].name }} Logs
+                </button>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<!-- Terminal Container -->
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span><i class="fas fa-server me-2"></i>Shell Session</span>
+        <span class="badge" id="connection-status">
+            <i class="fas fa-spinner fa-spin me-1"></i>Connecting...
+        </span>
+    </div>
+    <div class="card-body p-0">
+        <div id="terminal" style="height: 500px; background-color: #000;"></div>
+    </div>
+</div>
+
+<!-- Terminal Instructions -->
+<div class="alert alert-info mt-3">
+    <i class="fas fa-info-circle me-2"></i>
+    <strong>Terminal Instructions:</strong>
+    <ul class="mb-0 mt-2">
+        <li>Full shell access with real-time output</li>
+        <li>Use <kbd>Ctrl+C</kbd> to interrupt running commands</li>
+        <li>Use <kbd>Ctrl+L</kbd> or <code>clear</code> to clear the terminal</li>
+        <li>Terminal supports colors, cursor positioning, and special characters</li>
+        <li>Session is automatically cleaned up when you disconnect</li>
+    </ul>
+</div>
+
+<script src="{{ url_for('static', filename='js/terminal.js') }}"></script>
+
+<script>
+// Initialize terminal when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    initializeTerminal();
+});
+
+function toggleShortcuts() {
+    const panel = document.getElementById('shortcuts-panel');
+    if (panel.style.display === 'none') {
+        panel.style.display = 'block';
+    } else {
+        panel.style.display = 'none';
+    }
+}
+
+function sendCommand(command) {
+    if (window.terminal && window.socket) {
+        // Send the command to the terminal
+        window.socket.emit('terminal_input', { data: command + '\n' });
+        
+        // Hide shortcuts panel after sending command
+        document.getElementById('shortcuts-panel').style.display = 'none';
+    }
+}
+
+function clearTerminal() {
+    if (window.terminal) {
+        window.terminal.clear();
+    }
+}
+</script>
+{% endblock %}

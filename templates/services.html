@@ -1,0 +1,214 @@
+{% extends "base.html" %}
+
+{% block title %}Services - Aura{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="fas fa-cogs me-2"></i>Service Management</h1>
+</div>
+
+<div class="row">
+    {% for service_name, service_config in services.items() %}
+    <div class="col-md-6 col-lg-4 mb-4">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h6 class="mb-0">{{ service_config.name }}</h6>
+                <span class="badge" id="status-badge-{{ service_name }}">
+                    <i class="fas fa-spinner fa-spin me-1"></i>Loading...
+                </span>
+            </div>
+            <div class="card-body">
+                <p class="card-text text-muted">{{ service_config.description }}</p>
+                <p class="small"><strong>Service:</strong> <code>{{ service_name }}</code></p>
+                <p class="small"><strong>Path:</strong> <code>{{ service_config.path }}</code></p>
+                
+                <!-- Service Control Buttons -->
+                <div class="btn-group w-100 mb-3" role="group">
+                    <button type="button" class="btn btn-success btn-sm" 
+                            onclick="serviceAction('start', '{{ service_name }}')">
+                        <i class="fas fa-play me-1"></i>Start
+                    </button>
+                    <button type="button" class="btn btn-secondary btn-sm" 
+                            onclick="serviceAction('stop', '{{ service_name }}')">
+                        <i class="fas fa-stop me-1"></i>Stop
+                    </button>
+                    <button type="button" class="btn btn-warning btn-sm" 
+                            onclick="serviceAction('restart', '{{ service_name }}')">
+                        <i class="fas fa-redo me-1"></i>Restart
+                    </button>
+                </div>
+                
+                <!-- Resource Limits -->
+                <div class="mt-3">
+                    <button class="btn btn-outline-primary btn-sm w-100" type="button" 
+                            data-bs-toggle="collapse" data-bs-target="#config-{{ service_name.replace('.', '-') }}">
+                        <i class="fas fa-sliders-h me-1"></i>Resource Limits
+                    </button>
+                    
+                    <div class="collapse mt-2" id="config-{{ service_name.replace('.', '-') }}">
+                        <div class="card card-body bg-dark">
+                            <form onsubmit="updateServiceLimits(event, '{{ service_name }}')">
+                                <div class="row">
+                                    <div class="col-6">
+                                        <label class="form-label small">CPU Quota</label>
+                                        <input type="text" class="form-control form-control-sm" 
+                                               id="cpu-{{ service_name.replace('.', '-') }}" 
+                                               placeholder="e.g., 50%">
+                                        <small class="text-muted">CPU limit percentage</small>
+                                    </div>
+                                    <div class="col-6">
+                                        <label class="form-label small">Memory Max</label>
+                                        <input type="text" class="form-control form-control-sm" 
+                                               id="memory-{{ service_name.replace('.', '-') }}" 
+                                               placeholder="e.g., 512M">
+                                        <small class="text-muted">Memory limit</small>
+                                    </div>
+                                </div>
+                                <button type="submit" class="btn btn-primary btn-sm mt-2 w-100">
+                                    <i class="fas fa-save me-1"></i>Update Limits
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Output Area -->
+                <div class="mt-3">
+                    <div class="alert alert-dark" id="output-{{ service_name.replace('.', '-') }}" style="display: none;">
+                        <small id="output-text-{{ service_name.replace('.', '-') }}"></small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<script>
+// Load initial service statuses and configurations
+document.addEventListener('DOMContentLoaded', function() {
+    {% for service_name in services.keys() %}
+    // Load status
+    loadServiceStatus('{{ service_name }}');
+    
+    // Load configuration
+    loadServiceConfig('{{ service_name }}');
+    {% endfor %}
+});
+
+function loadServiceStatus(serviceName) {
+    fetch(`/service/status/${serviceName}`)
+        .then(response => response.json())
+        .then(data => {
+            updateStatusBadge(serviceName, data.status);
+        })
+        .catch(error => {
+            console.error('Error loading status:', error);
+            updateStatusBadge(serviceName, 'error');
+        });
+}
+
+function loadServiceConfig(serviceName) {
+    fetch(`/service_config/${serviceName}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const serviceId = serviceName.replace('.', '-');
+                if (data.cpu_quota) {
+                    document.getElementById(`cpu-${serviceId}`).value = data.cpu_quota;
+                }
+                if (data.memory_max) {
+                    document.getElementById(`memory-${serviceId}`).value = data.memory_max;
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Error loading config:', error);
+        });
+}
+
+function updateStatusBadge(serviceName, status) {
+    const badge = document.getElementById(`status-badge-${serviceName}`);
+    badge.className = 'badge';
+    
+    switch(status) {
+        case 'running':
+            badge.className += ' bg-success';
+            badge.innerHTML = '<i class="fas fa-check-circle me-1"></i>Running';
+            break;
+        case 'stopped':
+            badge.className += ' bg-secondary';
+            badge.innerHTML = '<i class="fas fa-stop-circle me-1"></i>Stopped';
+            break;
+        case 'failed':
+            badge.className += ' bg-danger';
+            badge.innerHTML = '<i class="fas fa-exclamation-triangle me-1"></i>Failed';
+            break;
+        default:
+            badge.className += ' bg-warning';
+            badge.innerHTML = '<i class="fas fa-question-circle me-1"></i>Unknown';
+    }
+}
+
+function serviceAction(action, serviceName) {
+    const serviceId = serviceName.replace('.', '-');
+    const outputDiv = document.getElementById(`output-${serviceId}`);
+    const outputText = document.getElementById(`output-text-${serviceId}`);
+    
+    // Show loading
+    outputDiv.style.display = 'block';
+    outputText.innerHTML = `<i class="fas fa-spinner fa-spin me-1"></i>Executing ${action}...`;
+    
+    fetch(`/service/${action}/${serviceName}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                outputText.innerHTML = `<i class="fas fa-check me-1 text-success"></i>${data.output || 'Operation completed successfully'}`;
+                // Reload status after action
+                setTimeout(() => loadServiceStatus(serviceName), 1000);
+            } else {
+                outputText.innerHTML = `<i class="fas fa-times me-1 text-danger"></i>Error: ${data.error || 'Operation failed'}`;
+            }
+        })
+        .catch(error => {
+            outputText.innerHTML = `<i class="fas fa-times me-1 text-danger"></i>Network error: ${error.message}`;
+        });
+}
+
+function updateServiceLimits(event, serviceName) {
+    event.preventDefault();
+    
+    const serviceId = serviceName.replace('.', '-');
+    const cpuQuota = document.getElementById(`cpu-${serviceId}`).value;
+    const memoryMax = document.getElementById(`memory-${serviceId}`).value;
+    
+    const outputDiv = document.getElementById(`output-${serviceId}`);
+    const outputText = document.getElementById(`output-text-${serviceId}`);
+    
+    outputDiv.style.display = 'block';
+    outputText.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Updating service limits...';
+    
+    fetch(`/service_config/${serviceName}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            cpu_quota: cpuQuota || null,
+            memory_max: memoryMax || null
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            outputText.innerHTML = '<i class="fas fa-check me-1 text-success"></i>Service limits updated successfully';
+        } else {
+            outputText.innerHTML = `<i class="fas fa-times me-1 text-danger"></i>Error: ${data.error}`;
+        }
+    })
+    .catch(error => {
+        outputText.innerHTML = `<i class="fas fa-times me-1 text-danger"></i>Network error: ${error.message}`;
+    });
+}
+</script>
+{% endblock %}

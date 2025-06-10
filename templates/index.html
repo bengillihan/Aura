@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1><i class="fas fa-tachometer-alt me-2"></i>Dashboard</h1>
+            <div class="badge bg-success">
+                <i class="fas fa-check-circle me-1"></i>System Online
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Quick Actions -->
+    <div class="col-md-6 col-lg-3 mb-4">
+        <div class="card h-100">
+            <div class="card-body text-center">
+                <i class="fas fa-cogs fa-2x text-primary mb-3"></i>
+                <h5 class="card-title">Service Control</h5>
+                <p class="card-text text-muted">Manage systemd services</p>
+                <a href="{{ url_for('services') }}" class="btn btn-primary">
+                    <i class="fas fa-arrow-right me-1"></i>Manage
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6 col-lg-3 mb-4">
+        <div class="card h-100">
+            <div class="card-body text-center">
+                <i class="fas fa-rocket fa-2x text-success mb-3"></i>
+                <h5 class="card-title">Deployments</h5>
+                <p class="card-text text-muted">Deploy from GitHub</p>
+                <a href="{{ url_for('deploy') }}" class="btn btn-success">
+                    <i class="fas fa-arrow-right me-1"></i>Deploy
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6 col-lg-3 mb-4">
+        <div class="card h-100">
+            <div class="card-body text-center">
+                <i class="fas fa-chart-line fa-2x text-info mb-3"></i>
+                <h5 class="card-title">Monitoring</h5>
+                <p class="card-text text-muted">Resource usage stats</p>
+                <a href="{{ url_for('monitoring') }}" class="btn btn-info">
+                    <i class="fas fa-arrow-right me-1"></i>Monitor
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6 col-lg-3 mb-4">
+        <div class="card h-100">
+            <div class="card-body text-center">
+                <i class="fas fa-terminal fa-2x text-warning mb-3"></i>
+                <h5 class="card-title">Terminal</h5>
+                <p class="card-text text-muted">Web-based shell access</p>
+                <a href="{{ url_for('terminal') }}" class="btn btn-warning">
+                    <i class="fas fa-arrow-right me-1"></i>Access
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Services Overview -->
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-server me-2"></i>Managed Services</h5>
+            </div>
+            <div class="card-body">
+                {% if services %}
+                <div class="row">
+                    {% for service_name, service_config in services.items() %}
+                    <div class="col-md-6 col-lg-4 mb-3">
+                        <div class="card border-secondary">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div>
+                                        <h6 class="card-title">{{ service_config.name }}</h6>
+                                        <p class="card-text text-muted small">{{ service_config.description }}</p>
+                                        <code class="small">{{ service_name }}</code>
+                                    </div>
+                                    <span class="badge bg-secondary" id="status-{{ service_name }}">
+                                        <i class="fas fa-spinner fa-spin me-1"></i>Loading...
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center text-muted">
+                    <i class="fas fa-info-circle fa-2x mb-3"></i>
+                    <p>No services configured. Add services in config.py</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Load service statuses
+document.addEventListener('DOMContentLoaded', function() {
+    {% for service_name in services.keys() %}
+    fetch('/service/status/{{ service_name }}')
+        .then(response => response.json())
+        .then(data => {
+            const statusElement = document.getElementById('status-{{ service_name }}');
+            if (data.status === 'running') {
+                statusElement.innerHTML = '<i class="fas fa-check-circle me-1"></i>Running';
+                statusElement.className = 'badge bg-success';
+            } else if (data.status === 'stopped') {
+                statusElement.innerHTML = '<i class="fas fa-stop-circle me-1"></i>Stopped';
+                statusElement.className = 'badge bg-secondary';
+            } else if (data.status === 'failed') {
+                statusElement.innerHTML = '<i class="fas fa-exclamation-triangle me-1"></i>Failed';
+                statusElement.className = 'badge bg-danger';
+            } else {
+                statusElement.innerHTML = '<i class="fas fa-question-circle me-1"></i>Unknown';
+                statusElement.className = 'badge bg-warning';
+            }
+        })
+        .catch(error => {
+            const statusElement = document.getElementById('status-{{ service_name }}');
+            statusElement.innerHTML = '<i class="fas fa-times-circle me-1"></i>Error';
+            statusElement.className = 'badge bg-danger';
+        });
+    {% endfor %}
+});
+</script>
+{% endblock %}

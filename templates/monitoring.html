@@ -1,0 +1,304 @@
+{% extends "base.html" %}
+
+{% block title %}Monitoring - Aura{% endblock %}
+
+{% block extra_head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="fas fa-chart-line me-2"></i>System Monitoring</h1>
+    <div class="badge bg-info">
+        <i class="fas fa-sync-alt me-1"></i>Auto-refresh: 5s
+    </div>
+</div>
+
+<!-- System Overview -->
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body text-center">
+                <i class="fas fa-microchip fa-2x text-primary mb-2"></i>
+                <h5>CPU Usage</h5>
+                <h3 id="system-cpu" class="text-primary">--</h3>
+                <small class="text-muted">System Load</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body text-center">
+                <i class="fas fa-memory fa-2x text-info mb-2"></i>
+                <h5>Memory Usage</h5>
+                <h3 id="system-memory" class="text-info">--</h3>
+                <small class="text-muted" id="system-memory-details">-- / --</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body text-center">
+                <i class="fas fa-hdd fa-2x text-warning mb-2"></i>
+                <h5>Disk Usage</h5>
+                <h3 id="system-disk" class="text-warning">--</h3>
+                <small class="text-muted" id="system-disk-details">-- / --</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">CPU Usage History</h6>
+            </div>
+            <div class="card-body">
+                <canvas id="cpuChart" width="400" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">Memory Usage History</h6>
+            </div>
+            <div class="card-body">
+                <canvas id="memoryChart" width="400" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Service-specific Monitoring -->
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="fas fa-server me-2"></i>Service Resource Usage</h6>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-dark table-hover">
+                        <thead>
+                            <tr>
+                                <th>Service</th>
+                                <th>Status</th>
+                                <th>PID</th>
+                                <th>CPU %</th>
+                                <th>Memory</th>
+                                <th>Memory %</th>
+                                <th>Processes</th>
+                            </tr>
+                        </thead>
+                        <tbody id="service-metrics">
+                            {% for service_name, service_config in services.items() %}
+                            <tr id="row-{{ service_name.replace('.', '-') }}">
+                                <td>{{ service_config.name }}</td>
+                                <td><span class="badge bg-secondary">Loading...</span></td>
+                                <td>--</td>
+                                <td>--</td>
+                                <td>--</td>
+                                <td>--</td>
+                                <td>--</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Initialize charts
+const cpuChart = new Chart(document.getElementById('cpuChart'), {
+    type: 'line',
+    data: {
+        labels: [],
+        datasets: [{
+            label: 'CPU %',
+            data: [],
+            borderColor: '#007bff',
+            backgroundColor: 'rgba(0, 123, 255, 0.1)',
+            fill: true,
+            tension: 0.4
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+            y: {
+                beginAtZero: true,
+                max: 100,
+                grid: {
+                    color: 'rgba(255, 255, 255, 0.1)'
+                }
+            },
+            x: {
+                grid: {
+                    color: 'rgba(255, 255, 255, 0.1)'
+                }
+            }
+        },
+        plugins: {
+            legend: {
+                labels: {
+                    color: '#fff'
+                }
+            }
+        }
+    }
+});
+
+const memoryChart = new Chart(document.getElementById('memoryChart'), {
+    type: 'line',
+    data: {
+        labels: [],
+        datasets: [{
+            label: 'Memory %',
+            data: [],
+            borderColor: '#17a2b8',
+            backgroundColor: 'rgba(23, 162, 184, 0.1)',
+            fill: true,
+            tension: 0.4
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+            y: {
+                beginAtZero: true,
+                max: 100,
+                grid: {
+                    color: 'rgba(255, 255, 255, 0.1)'
+                }
+            },
+            x: {
+                grid: {
+                    color: 'rgba(255, 255, 255, 0.1)'
+                }
+            }
+        },
+        plugins: {
+            legend: {
+                labels: {
+                    color: '#fff'
+                }
+            }
+        }
+    }
+});
+
+// Data storage for charts
+const maxDataPoints = 20;
+let cpuData = [];
+let memoryData = [];
+let timeLabels = [];
+
+function formatBytes(bytes) {
+    const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+    if (bytes === 0) return '0 B';
+    const i = Math.floor(Math.log(bytes) / Math.log(1024));
+    return Math.round(bytes / Math.pow(1024, i) * 100) / 100 + ' ' + sizes[i];
+}
+
+function updateCharts(systemData) {
+    const now = new Date().toLocaleTimeString();
+    
+    // Add new data points
+    timeLabels.push(now);
+    cpuData.push(systemData.cpu.percent);
+    memoryData.push(systemData.memory.percent);
+    
+    // Remove old data points
+    if (timeLabels.length > maxDataPoints) {
+        timeLabels.shift();
+        cpuData.shift();
+        memoryData.shift();
+    }
+    
+    // Update charts
+    cpuChart.data.labels = timeLabels;
+    cpuChart.data.datasets[0].data = cpuData;
+    cpuChart.update('none');
+    
+    memoryChart.data.labels = timeLabels;
+    memoryChart.data.datasets[0].data = memoryData;
+    memoryChart.update('none');
+}
+
+function updateResourceUsage() {
+    fetch('/api/resource_usage')
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                console.error('Error fetching resource usage:', data.error);
+                return;
+            }
+            
+            // Update system metrics
+            const system = data.system;
+            document.getElementById('system-cpu').textContent = `${system.cpu.percent.toFixed(1)}%`;
+            document.getElementById('system-memory').textContent = `${system.memory.percent.toFixed(1)}%`;
+            document.getElementById('system-memory-details').textContent = 
+                `${formatBytes(system.memory.used)} / ${formatBytes(system.memory.total)}`;
+            document.getElementById('system-disk').textContent = `${system.disk.percent.toFixed(1)}%`;
+            document.getElementById('system-disk-details').textContent = 
+                `${formatBytes(system.disk.used)} / ${formatBytes(system.disk.total)}`;
+            
+            // Update charts
+            updateCharts(system);
+            
+            // Update service metrics
+            const services = data.services;
+            {% for service_name in services.keys() %}
+            const service_{{ service_name.replace('.', '_').replace('-', '_') }} = services['{{ service_name }}'];
+            const row_{{ service_name.replace('.', '_').replace('-', '_') }} = document.getElementById('row-{{ service_name.replace('.', '-') }}');
+            
+            if (service_{{ service_name.replace('.', '_').replace('-', '_') }}.error) {
+                row_{{ service_name.replace('.', '_').replace('-', '_') }}.innerHTML = `
+                    <td>{{ services[service_name].name }}</td>
+                    <td><span class="badge bg-danger">Error</span></td>
+                    <td colspan="5">${service_{{ service_name.replace('.', '_').replace('-', '_') }}.error}</td>
+                `;
+            } else if (service_{{ service_name.replace('.', '_').replace('-', '_') }}.status === 'not_running') {
+                row_{{ service_name.replace('.', '_').replace('-', '_') }}.innerHTML = `
+                    <td>{{ services[service_name].name }}</td>
+                    <td><span class="badge bg-secondary">Not Running</span></td>
+                    <td>--</td>
+                    <td>--</td>
+                    <td>--</td>
+                    <td>--</td>
+                    <td>--</td>
+                `;
+            } else {
+                row_{{ service_name.replace('.', '_').replace('-', '_') }}.innerHTML = `
+                    <td>{{ services[service_name].name }}</td>
+                    <td><span class="badge bg-success">Running</span></td>
+                    <td>${service_{{ service_name.replace('.', '_').replace('-', '_') }}.pid || '--'}</td>
+                    <td>${service_{{ service_name.replace('.', '_').replace('-', '_') }}.cpu ? service_{{ service_name.replace('.', '_').replace('-', '_') }}.cpu.toFixed(1) + '%' : '--'}</td>
+                    <td>${service_{{ service_name.replace('.', '_').replace('-', '_') }}.memory ? formatBytes(service_{{ service_name.replace('.', '_').replace('-', '_') }}.memory) : '--'}</td>
+                    <td>${service_{{ service_name.replace('.', '_').replace('-', '_') }}.memory_percent ? service_{{ service_name.replace('.', '_').replace('-', '_') }}.memory_percent.toFixed(1) + '%' : '--'}</td>
+                    <td>${service_{{ service_name.replace('.', '_').replace('-', '_') }}.children_count || 0}</td>
+                `;
+            }
+            {% endfor %}
+        })
+        .catch(error => {
+            console.error('Error fetching resource usage:', error);
+        });
+}
+
+// Initial load and periodic updates
+document.addEventListener('DOMContentLoaded', function() {
+    updateResourceUsage();
+    setInterval(updateResourceUsage, 5000); // Update every 5 seconds
+});
+</script>
+{% endblock %}
