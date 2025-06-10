@@ -1,0 +1,70 @@
+Of course. Here is a complete project overview and development plan for an AI agent to build the self-hosted server administration dashboard we have designed.
+Project Brief: "Aura" Server Administration Dashboard
+1. Project Overview & Goal
+The objective is to build a secure, web-based Python application named "Aura" that provides a comprehensive interface for managing applications, deployments, and system resources on a self-hosted server. The application will run on the server it manages and will be accessible from anywhere via a web browser, secured by Google authentication. This will empower the user with a centralized, easy-to-use tool, eliminating the need for constant command-line access for routine tasks.
+2. Core Technology Stack
+ * Backend Framework: Python 3 with Flask
+ * WSGI Server: Gunicorn
+ * Process Manager: systemd (for managing all applications, including Aura itself)
+ * Reverse Proxy: Nginx (to handle web traffic and SSL)
+ * Authentication: OAuth 2.0 via Google, implemented with the Flask-Dance library.
+ * Real-time Communication: Flask-SocketIO for the web terminal feature.
+ * Frontend Terminal: Xterm.js JavaScript library.
+ * System Interaction: Python's subprocess module for executing shell commands and the psutil library for resource monitoring.
+ * Deployment Target: WSL 2 (Ubuntu) running on a Windows host.
+3. Development Phases & Milestones
+This project should be built incrementally in the following phases:
+Phase 1: Core Service Control Panel
+ * Objective: Create the foundational Flask application with the ability to control other systemd services. At this stage, security is not implemented.
+ * Tasks:
+   * Initialize a standard Flask application structure.
+   * Create a configuration dictionary mapping service names (e.g., podcastpal.service) to their server paths.
+   * Implement backend routes (/start/<service>, /stop/<service>, /restart/<service>, /status/<service>).
+   * These routes will use the subprocess module to execute the corresponding sudo systemctl commands. The output of these commands should be captured and displayed.
+   * Build a simple HTML frontend with buttons for each action, for each managed service.
+ * Outcome: A functional, locally-accessible dashboard that can control predefined applications.
+Phase 2: Google Authentication Layer
+ * Objective: Secure the entire application, making it safe for internet exposure.
+ * Tasks:
+   * Generate OAuth 2.0 Client ID and Client Secret from the Google Cloud Platform Console. The "Authorized redirect URI" must be precisely configured (e.g., http://your-domain.duckdns.org:5001/login/google/authorized).
+   * Integrate the Flask-Dance library and register the Google blueprint.
+   * Implement the login flow, redirecting any unauthenticated user to Google for sign-in.
+   * Implement the authorization check: after a successful login, verify that the user's email matches a hardcoded ALLOWED_EMAIL variable. If it does not match, deny access.
+   * Protect every single route (including all Phase 1 routes) with this authentication and authorization check.
+   * Add a /logout route.
+ * Outcome: A secure dashboard that can only be accessed by the authorized user. The application's port can now be safely forwarded through the router.
+Phase 3: GitHub Deployment Pipeline
+ * Objective: Add a one-click deployment feature to update applications from a GitHub repository.
+ * Tasks:
+   * Generate an SSH key on the server and add the public key as a read-only "Deploy Key" to the target GitHub repositories.
+   * Create a /deploy/<service> route, protected by the Phase 2 security layer.
+   * The backend function for this route must execute the following sequence for the given service:
+     a. cd into the application's directory.
+     b. Run git pull to fetch the latest code.
+     c. Run pip install -r requirements.txt using the application's specific Python virtual environment (venv).
+     d. Run sudo systemctl restart <service> to apply the changes.
+   * The output of this entire process should be streamed to the browser in real-time to provide feedback to the user.
+ * Outcome: The ability to update live applications simply by pushing code to GitHub and clicking a "Deploy" button in the dashboard.
+Phase 4: Resource Monitoring & Management
+ * Objective: Display live resource usage and add controls to set resource limits.
+ * Tasks:
+   * Monitoring:
+     a. Integrate the psutil library.
+     b. Create an API endpoint (e.g., /api/resource_usage) that returns a JSON object with the current CPU and RAM usage for each managed application's process.
+     c. Use JavaScript on the frontend to periodically poll this endpoint and update a "live stats" section of the dashboard.
+   * Management:
+     a. Add UI controls (e.g., input forms) to the dashboard for setting CPU (CPUQuota) and RAM (MemoryMax) limits for each service.
+     b. Create a backend function that programmatically reads a service's .service file, modifies the [Service] section to add/update the resource directives, and writes the file back.
+     c. After modifying a file, the function must execute sudo systemctl daemon-reload and restart the service.
+ * Outcome: A dashboard that provides visibility into application performance and the ability to enforce resource constraints.
+Phase 5: Integrated Web Terminal (Advanced)
+ * Objective: Embed a fully functional, secure shell within the web interface.
+ * Tasks:
+   * Integrate Flask-SocketIO into the Flask application to manage WebSocket connections.
+   * On the frontend, integrate the Xterm.js library to render the terminal interface.
+   * Develop the WebSocket backend logic to:
+     a. Spawn a new shell process (pty) for each authenticated web client.
+     b. Pipe data bi-directionally: from the web client's keystrokes to the shell process, and from the shell process's output back to the web client.
+   * Add a section to the UI with buttons that act as shortcuts, sending predefined command strings (e.g., ls -la, sudo journalctl -u podcastpal.service -f) to the terminal.
+   * Ensure this entire feature is strictly protected by the Phase 2 Google authentication layer.
+ * Outcome: An all-in-one administration tool that provides direct shell access, centralizing all management tasks within a single browser tab.
