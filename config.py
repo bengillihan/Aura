@@ -1,7 +1,7 @@
 import os
 
 # Authorized email for access control
-ALLOWED_EMAIL = os.environ.get("ALLOWED_EMAIL", "your-email@gmail.com")
+ALLOWED_EMAIL = os.environ.get("ALLOWED_EMAIL", "Bdgillihan@gmail.com")
 
 # Configuration for managed services
 # Each service should have a name and path to its directory
